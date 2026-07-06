@@ -9,8 +9,8 @@ jimny-db/
 ├── data/       # 結構化 JSON 資料
 ├── docs/       # 人類可閱讀的 Markdown 文件
 ├── images/     # 車輛照片、零件照片、維修圖片
-├── app/        # 未來可放查詢介面或應用程式
-├── scripts/    # 未來可放資料轉換、檢查或匯入腳本
+├── app/        # Jimny DB 查詢 App
+├── scripts/    # 啟動或維護腳本
 ├── README.md   # 專案說明
 └── .gitignore  # Git 忽略設定
 ```
@@ -38,6 +38,28 @@ jimny-db/
 3. 新增油品或零件規格時，同步更新 `data/fluids.json` 與 `docs/油品規格.md`。
 4. 遇到故障時，先查 `data/troubleshooting.json` 與 `data/obd_codes.json`。
 5. 改裝後記錄在 `docs/改裝紀錄.md`，並可把照片放入 `images/`。
+
+## 啟動 App
+
+在 PowerShell 執行：
+
+```powershell
+.\scripts\start-app.ps1
+```
+
+然後用瀏覽器開啟：
+
+```text
+http://localhost:8000/app/
+```
+
+App 會讀取 `data/` 裡的 JSON，提供總覽、保養、油品、扭力、故障排除與 OBD 代碼查詢。
+
+如果 PowerShell 阻擋腳本執行，可以改用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-app.ps1
+```
 
 ## 注意事項
 

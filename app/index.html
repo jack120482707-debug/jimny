@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jimny DB</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Suzuki Jimny</p>
+        <h1>Jimny DB</h1>
+      </div>
+      <div class="status" id="dataStatus">載入資料中</div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="主要分類">
+        <button class="nav-button active" data-view="overview">總覽</button>
+        <button class="nav-button" data-view="maintenance">保養</button>
+        <button class="nav-button" data-view="fluids">油品</button>
+        <button class="nav-button" data-view="torque">扭力</button>
+        <button class="nav-button" data-view="troubleshooting">故障排除</button>
+        <button class="nav-button" data-view="obd">OBD 代碼</button>
+      </aside>
+
+      <section class="content">
+        <div class="toolbar">
+          <label class="search-box">
+            <span>搜尋</span>
+            <input id="searchInput" type="search" placeholder="輸入關鍵字、代碼或項目">
+          </label>
+        </div>
+        <div id="appContent" class="view"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

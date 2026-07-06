@@ -1,0 +1,25 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+
+# Local exports
+exports/
+*.bak
+
+# Dependencies and build output for future app work
+node_modules/
+dist/
+build/
+.env
+.env.local

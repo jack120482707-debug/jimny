@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "vehicle_ref": "Suzuki Jimny JB74",
+  "unit": "N·m",
+  "torque_specs": [
+    {
+      "category": "Wheels",
+      "component": "Wheel lug nut",
+      "torque_nm": 100,
+      "fastener_size": "M12",
+      "notes": "落地後以星形順序分段鎖緊，行駛 50-100 km 後複檢。"
+    },
+    {
+      "category": "Engine",
+      "component": "Engine oil drain plug",
+      "torque_nm": 35,
+      "fastener_size": "M14",
+      "notes": "更換墊片，避免過度鎖緊造成油底殼牙損傷。"
+    },
+    {
+      "category": "Engine",
+      "component": "Oil filter",
+      "torque_nm": 14,
+      "fastener_size": "Spin-on",
+      "notes": "橡膠墊圈上薄油，接觸後依濾芯規範再轉緊。"
+    },
+    {
+      "category": "Brake",
+      "component": "Front caliper slide pin bolt",
+      "torque_nm": 26,
+      "fastener_size": "M8",
+      "notes": "清潔並確認滑銷潤滑正常。"
+    },
+    {
+      "category": "Brake",
+      "component": "Front caliper bracket bolt",
+      "torque_nm": 85,
+      "fastener_size": "M12",
+      "notes": "煞車系統施工後需測試踏感與制動。"
+    },
+    {
+      "category": "Drivetrain",
+      "component": "Differential fill plug",
+      "torque_nm": 23,
+      "fastener_size": "Square plug",
+      "notes": "先確認加油孔可拆，再拆洩油孔。"
+    },
+    {
+      "category": "Drivetrain",
+      "component": "Differential drain plug",
+      "torque_nm": 23,
+      "fastener_size": "Square plug",
+      "notes": "清潔磁鐵鐵粉並更換墊片。"
+    },
+    {
+      "category": "Suspension",
+      "component": "Front shock absorber lower bolt",
+      "torque_nm": 90,
+      "fastener_size": "M12",
+      "notes": "懸吊件建議在車身承重狀態下鎖付。"
+    },
+    {
+      "category": "Suspension",
+      "component": "Radius arm chassis bolt",
+      "torque_nm": 110,
+      "fastener_size": "M14",
+      "notes": "改裝升高後需定期檢查襯套與定位。"
+    }
+  ],
+  "reminders": [
+    "此檔案為範例資料，實際扭力請以官方維修手冊為準。",
+    "煞車、轉向、懸吊與傳動系統施工後務必試車並複檢。",
+    "使用扭力扳手前確認校正狀態與量程適合。"
+  ]
+}

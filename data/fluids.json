@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0.0",
+  "vehicle_ref": "Suzuki Jimny JB74",
+  "fluids": [
+    {
+      "system": "Engine",
+      "fluid_name": "Engine oil",
+      "recommended_spec": "API SP / ILSAC GF-6 or equivalent",
+      "viscosity": "5W-30",
+      "capacity_liters": {
+        "with_filter": 3.6,
+        "without_filter": 3.4
+      },
+      "change_interval": {
+        "normal_km": 10000,
+        "normal_months": 12,
+        "severe_km": 5000,
+        "severe_months": 6
+      },
+      "notes": "容量為範例值，實際加注後以油尺確認。"
+    },
+    {
+      "system": "Manual transmission",
+      "fluid_name": "Gear oil",
+      "recommended_spec": "API GL-4",
+      "viscosity": "75W-90",
+      "capacity_liters": {
+        "service_fill": 1.2
+      },
+      "change_interval": {
+        "normal_km": 40000,
+        "normal_months": 48
+      },
+      "notes": "避免誤用不適合同步器的油品。"
+    },
+    {
+      "system": "Transfer case",
+      "fluid_name": "Transfer oil",
+      "recommended_spec": "API GL-4",
+      "viscosity": "75W",
+      "capacity_liters": {
+        "service_fill": 1.0
+      },
+      "change_interval": {
+        "normal_km": 40000,
+        "normal_months": 48
+      },
+      "notes": "涉水後建議檢查油色。"
+    },
+    {
+      "system": "Front differential",
+      "fluid_name": "Hypoid gear oil",
+      "recommended_spec": "API GL-5",
+      "viscosity": "80W-90",
+      "capacity_liters": {
+        "service_fill": 1.35
+      },
+      "change_interval": {
+        "normal_km": 40000,
+        "normal_months": 48
+      },
+      "notes": "若加裝差速鎖，依差速鎖廠商規範調整。"
+    },
+    {
+      "system": "Rear differential",
+      "fluid_name": "Hypoid gear oil",
+      "recommended_spec": "API GL-5",
+      "viscosity": "80W-90",
+      "capacity_liters": {
+        "service_fill": 1.5
+      },
+      "change_interval": {
+        "normal_km": 40000,
+        "normal_months": 48
+      },
+      "notes": "涉水、拖曳或高負載後提前檢查。"
+    },
+    {
+      "system": "Brake",
+      "fluid_name": "Brake fluid",
+      "recommended_spec": "DOT 4",
+      "viscosity": null,
+      "capacity_liters": {
+        "service_fill": 0.7
+      },
+      "change_interval": {
+        "normal_km": 40000,
+        "normal_months": 24
+      },
+      "notes": "開封後容易吸濕，剩油不建議長期保存。"
+    },
+    {
+      "system": "Cooling",
+      "fluid_name": "Long-life coolant",
+      "recommended_spec": "Suzuki Super Long Life Coolant or equivalent",
+      "viscosity": null,
+      "capacity_liters": {
+        "total": 5.4
+      },
+      "change_interval": {
+        "normal_km": 80000,
+        "normal_months": 48
+      },
+      "notes": "請勿混用不相容冷卻液。"
+    }
+  ],
+  "inventory": [
+    {
+      "fluid_name": "5W-30 全合成機油",
+      "brand": "範例品牌",
+      "quantity_liters": 4,
+      "opened": false,
+      "storage_location": "車庫層架"
+    },
+    {
+      "fluid_name": "DOT 4 煞車油",
+      "brand": "範例品牌",
+      "quantity_liters": 1,
+      "opened": true,
+      "storage_location": "工具櫃",
+      "notes": "已開封，建議下次保養優先使用或汰換。"
+    }
+  ]
+}

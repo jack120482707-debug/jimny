@@ -1,0 +1,99 @@
+{
+  "project": {
+    "name": "jimny-db",
+    "description": "Suzuki Jimny 車輛資料庫範例",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-07-06"
+  },
+  "vehicle": {
+    "make": "Suzuki",
+    "model": "Jimny",
+    "generation": "JB74",
+    "year": 2024,
+    "trim": "GLX",
+    "body_style": "3-door SUV",
+    "drive_type": "Part-time 4WD",
+    "transmission": "5-speed manual",
+    "engine": {
+      "code": "K15B",
+      "layout": "Inline-4",
+      "displacement_cc": 1462,
+      "fuel_type": "Gasoline",
+      "aspiration": "Naturally aspirated"
+    },
+    "identifiers": {
+      "vin": "JSAGJB74V00123456",
+      "license_plate": "ABC-1234",
+      "nickname": "Jimny"
+    },
+    "purchase": {
+      "date": "2024-05-20",
+      "dealer": "範例 Suzuki 經銷商",
+      "initial_odometer_km": 18,
+      "warranty_until": "2029-05-19"
+    }
+  },
+  "dimensions": {
+    "length_mm": 3645,
+    "width_mm": 1645,
+    "height_mm": 1725,
+    "wheelbase_mm": 2250,
+    "ground_clearance_mm": 210,
+    "fuel_tank_liters": 40
+  },
+  "tires": {
+    "factory_size": "195/80R15",
+    "current_size": "195/80R15",
+    "recommended_pressure_psi": {
+      "front_normal": 26,
+      "rear_normal": 26,
+      "front_loaded": 26,
+      "rear_loaded": 29
+    },
+    "spare_tire": {
+      "size": "195/80R15",
+      "location": "Rear door"
+    }
+  },
+  "battery": {
+    "type": "Lead-acid",
+    "size": "46B24L",
+    "voltage": 12,
+    "replacement_date": "2026-01-15",
+    "notes": "若加裝絞盤、露營電系或冰箱，建議重新評估容量。"
+  },
+  "common_parts": [
+    {
+      "category": "Engine oil filter",
+      "part_number": "16510-81420",
+      "brand": "Suzuki OEM",
+      "notes": "每次更換機油時建議同步更換。"
+    },
+    {
+      "category": "Air filter",
+      "part_number": "13780-78R00",
+      "brand": "Suzuki OEM",
+      "notes": "多塵環境可縮短檢查週期。"
+    },
+    {
+      "category": "Spark plug",
+      "part_number": "09482-00602",
+      "brand": "Suzuki OEM",
+      "notes": "依車主手冊週期檢查與更換。"
+    }
+  ],
+  "modifications_summary": [
+    {
+      "date": "2025-03-10",
+      "item": "前後差速器透氣管延長",
+      "status": "Installed",
+      "notes": "涉水前後仍需檢查油品是否乳化。"
+    },
+    {
+      "date": "2025-09-02",
+      "item": "AT 胎",
+      "status": "Planned",
+      "notes": "更換尺寸前確認保險、驗車與速表誤差。"
+    }
+  ]
+}

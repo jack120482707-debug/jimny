@@ -1,0 +1,153 @@
+{
+  "schema_version": "1.0.0",
+  "vehicle_ref": "Suzuki Jimny JB74",
+  "codes": [
+    {
+      "code": "P0115",
+      "system": "Engine coolant temperature circuit",
+      "description": "引擎冷卻液溫度感知器電路異常",
+      "severity": "high",
+      "symptoms": [
+        "水溫顯示異常",
+        "冷車或熱車啟動不順",
+        "風扇作動異常",
+        "油耗增加"
+      ],
+      "possible_causes": [
+        "水溫感知器故障",
+        "線束或接頭接觸不良",
+        "冷卻液不足",
+        "ECU 讀值異常"
+      ],
+      "diagnosis": [
+        "讀取即時水溫數據。",
+        "冷車時比對環境溫度。",
+        "檢查感知器接頭與線束。",
+        "依規範量測感知器阻值。"
+      ],
+      "fixes": [
+        "補足冷卻液並排氣。",
+        "清潔或修復接頭。",
+        "更換水溫感知器。"
+      ]
+    },
+    {
+      "code": "P0128",
+      "system": "Coolant thermostat",
+      "description": "冷卻系統未達正常工作溫度",
+      "severity": "medium",
+      "symptoms": [
+        "暖氣不夠熱",
+        "油耗增加",
+        "水溫偏低",
+        "Check Engine 燈亮"
+      ],
+      "possible_causes": [
+        "節溫器卡開",
+        "水溫感知器讀值偏差",
+        "冷卻液規格或濃度不正確"
+      ],
+      "diagnosis": [
+        "觀察冷車到熱車水溫上升曲線。",
+        "確認水箱風扇是否過早作動。",
+        "檢查節溫器開啟溫度。"
+      ],
+      "fixes": [
+        "更換節溫器。",
+        "更換或檢查水溫感知器。",
+        "更新冷卻液。"
+      ]
+    },
+    {
+      "code": "P0300",
+      "system": "Random/multiple cylinder misfire",
+      "description": "多缸或隨機失火",
+      "severity": "critical",
+      "symptoms": [
+        "怠速抖動",
+        "加速無力",
+        "Check Engine 燈閃爍",
+        "排氣味異常"
+      ],
+      "possible_causes": [
+        "火星塞老化",
+        "點火線圈異常",
+        "噴油嘴堵塞",
+        "進氣漏氣",
+        "壓縮壓力不足"
+      ],
+      "diagnosis": [
+        "讀取各缸失火計數。",
+        "檢查火星塞狀況。",
+        "交換點火線圈觀察故障是否轉移。",
+        "檢查進氣漏氣與燃油壓力。"
+      ],
+      "fixes": [
+        "更換火星塞。",
+        "更換故障點火線圈。",
+        "清潔或檢修噴油系統。",
+        "避免持續行駛以免觸媒受損。"
+      ]
+    },
+    {
+      "code": "P0420",
+      "system": "Catalyst system efficiency",
+      "description": "觸媒轉換器效率低於門檻",
+      "severity": "medium",
+      "symptoms": [
+        "Check Engine 燈亮",
+        "通常無明顯駕駛感受",
+        "排放檢測可能不合格"
+      ],
+      "possible_causes": [
+        "觸媒老化",
+        "氧感知器異常",
+        "排氣洩漏",
+        "長期失火造成觸媒損傷"
+      ],
+      "diagnosis": [
+        "檢查上游與下游氧感知器波形。",
+        "檢查排氣管路是否洩漏。",
+        "確認沒有未處理的失火代碼。"
+      ],
+      "fixes": [
+        "修復失火或混合比問題。",
+        "更換故障氧感知器。",
+        "必要時更換觸媒轉換器。"
+      ]
+    },
+    {
+      "code": "P0455",
+      "system": "EVAP system",
+      "description": "燃油蒸發控制系統大量洩漏",
+      "severity": "low",
+      "symptoms": [
+        "Check Engine 燈亮",
+        "燃油味",
+        "加油後燈號出現"
+      ],
+      "possible_causes": [
+        "油箱蓋未鎖緊",
+        "油箱蓋密封圈老化",
+        "EVAP 管路破裂",
+        "碳罐或 purge valve 異常"
+      ],
+      "diagnosis": [
+        "確認油箱蓋是否鎖緊。",
+        "檢查油箱蓋密封圈。",
+        "使用煙霧測漏檢查 EVAP 管路。",
+        "測試 purge valve 作動。"
+      ],
+      "fixes": [
+        "重新鎖緊或更換油箱蓋。",
+        "修復 EVAP 管路洩漏。",
+        "更換故障閥件。"
+      ]
+    }
+  ],
+  "scan_tool_notes": [
+    "清除故障碼前先記錄 freeze frame 與即時數據。",
+    "若 Check Engine 燈閃爍，通常代表失火嚴重，應降低負載並盡快檢修。",
+    "修復後需完成行車循環，確認 readiness monitor。"
+  ]
+}

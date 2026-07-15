@@ -10,19 +10,30 @@ const dataFiles = {
 const state = {
   data: {},
   view: "overview",
-  query: ""
+  query: "",
+  localMaintenanceRecords: []
 };
 
 const content = document.querySelector("#appContent");
 const statusLabel = document.querySelector("#dataStatus");
 const searchInput = document.querySelector("#searchInput");
 const navButtons = [...document.querySelectorAll(".nav-button")];
+const maintenanceStorageKey = "jimny-db-maintenance-records";
 
 function text(value) {
   if (value === null || value === undefined || value === "") return "-";
   if (Array.isArray(value)) return value.join("、");
   if (typeof value === "object") return Object.values(value).join(" / ");
   return String(value);
+}
+
+function escapeHtml(value) {
+  return text(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function matchesQuery(item) {
@@ -39,18 +50,92 @@ function table(headers, rows) {
   const head = headers.map((header) => `<th>${header.label}</th>`).join("");
   const body = rows
     .map((row) => {
-      const cells = headers.map((header) => `<td>${text(header.value(row))}</td>`).join("");
+      const cells = headers
+        .map((header) => {
+          const value = header.value(row);
+          return `<td>${header.html ? value : escapeHtml(value)}</td>`;
+        })
+        .join("");
       return `<tr>${cells}</tr>`;
     })
     .join("");
   return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
+function loadLocalMaintenanceRecords() {
+  const stored = localStorage.getItem(maintenanceStorageKey);
+  state.localMaintenanceRecords = stored ? JSON.parse(stored) : [];
+}
+
+function saveLocalMaintenanceRecords() {
+  localStorage.setItem(maintenanceStorageKey, JSON.stringify(state.localMaintenanceRecords));
+}
+
+function allMaintenanceRecords() {
+  const sourceRecords = state.data.maintenance.records || [];
+  return [...state.localMaintenanceRecords, ...sourceRecords].sort((a, b) => {
+    const dateCompare = String(b.date || "").localeCompare(String(a.date || ""));
+    if (dateCompare !== 0) return dateCompare;
+    return Number(b.odometer_km || 0) - Number(a.odometer_km || 0);
+  });
+}
+
+function maintenanceForm() {
+  const today = new Date().toISOString().slice(0, 10);
+  return `
+    <section>
+      <h2>新增保養紀錄</h2>
+      <form class="record-form" id="maintenanceForm">
+        <div class="form-grid">
+          <label>
+            <span>日期</span>
+            <input name="date" type="date" value="${today}" required>
+          </label>
+          <label>
+            <span>里程 km</span>
+            <input name="odometer_km" type="number" inputmode="numeric" min="0" step="1" placeholder="例如 20000" required>
+          </label>
+          <label>
+            <span>類型</span>
+            <select name="type">
+              <option value="Regular maintenance">定期保養</option>
+              <option value="Repair">維修</option>
+              <option value="Inspection">檢查</option>
+              <option value="Modification">改裝</option>
+            </select>
+          </label>
+          <label>
+            <span>店家</span>
+            <input name="shop" type="text" placeholder="例如 Suzuki 原廠">
+          </label>
+          <label class="wide">
+            <span>項目</span>
+            <input name="item_name" type="text" placeholder="例如 更換引擎機油與機油芯" required>
+          </label>
+          <label>
+            <span>費用 TWD</span>
+            <input name="cost_twd" type="number" inputmode="numeric" min="0" step="1" placeholder="例如 2150">
+          </label>
+          <label class="wide">
+            <span>備註</span>
+            <textarea name="notes" rows="3" placeholder="例如 空氣芯清潔後續用"></textarea>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit">儲存紀錄</button>
+          <button type="button" class="secondary" id="exportMaintenance">匯出手機紀錄</button>
+        </div>
+        <p class="form-note">手機新增的紀錄會存在這台手機的瀏覽器，不會自動寫回 GitHub。</p>
+      </form>
+    </section>
+  `;
+}
+
 function renderOverview() {
   const vehicle = state.data.vehicle.vehicle;
   const dimensions = state.data.vehicle.dimensions;
   const upcoming = state.data.maintenance.upcoming_tasks || [];
-  const records = state.data.maintenance.records || [];
+  const records = allMaintenanceRecords();
 
   content.innerHTML = `
     <section>
@@ -91,9 +176,10 @@ function renderOverview() {
 
 function renderMaintenance() {
   const intervals = state.data.maintenance.service_intervals || [];
-  const records = state.data.maintenance.records || [];
+  const records = allMaintenanceRecords();
 
   content.innerHTML = `
+    ${maintenanceForm()}
     <section>
       <h2>保養週期</h2>
       ${table(
@@ -114,7 +200,15 @@ function renderMaintenance() {
           { label: "里程", value: (row) => `${row.odometer_km.toLocaleString()} km` },
           { label: "店家", value: (row) => row.shop },
           { label: "項目", value: (row) => row.items.map((item) => item.name).join("、") },
-          { label: "備註", value: (row) => row.notes }
+          { label: "備註", value: (row) => row.notes },
+          {
+            label: "動作",
+            html: true,
+            value: (row) =>
+              row.local_id
+                ? `<button class="link-button" data-delete-maintenance="${escapeHtml(row.local_id)}">刪除</button>`
+                : "-"
+          }
         ],
         records.filter(matchesQuery)
       )}
@@ -222,6 +316,7 @@ function render() {
 
 async function loadData() {
   try {
+    loadLocalMaintenanceRecords();
     const entries = await Promise.all(
       Object.entries(dataFiles).map(async ([key, path]) => {
         const response = await fetch(path);
@@ -249,6 +344,58 @@ navButtons.forEach((button) => {
 searchInput.addEventListener("input", (event) => {
   state.query = event.target.value.trim();
   render();
+});
+
+content.addEventListener("submit", (event) => {
+  if (event.target.id !== "maintenanceForm") return;
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const cost = Number(formData.get("cost_twd") || 0);
+  const record = {
+    local_id: crypto.randomUUID(),
+    date: formData.get("date"),
+    odometer_km: Number(formData.get("odometer_km")),
+    type: formData.get("type"),
+    shop: formData.get("shop") || "未填寫",
+    items: [
+      {
+        name: formData.get("item_name"),
+        status: "completed",
+        parts: [],
+        cost_twd: cost
+      }
+    ],
+    notes: formData.get("notes") || "",
+    source: "phone-local"
+  };
+
+  state.localMaintenanceRecords.unshift(record);
+  saveLocalMaintenanceRecords();
+  event.target.reset();
+  render();
+});
+
+content.addEventListener("click", (event) => {
+  const deleteId = event.target.dataset.deleteMaintenance;
+  if (deleteId) {
+    state.localMaintenanceRecords = state.localMaintenanceRecords.filter((record) => record.local_id !== deleteId);
+    saveLocalMaintenanceRecords();
+    render();
+    return;
+  }
+
+  if (event.target.id === "exportMaintenance") {
+    const blob = new Blob([JSON.stringify(state.localMaintenanceRecords, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "jimny-maintenance-phone-records.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 });
 
 loadData();

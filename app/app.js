@@ -9,7 +9,7 @@ const dataFiles = {
 
 const state = {
   data: {},
-  view: "overview",
+  view: null,
   query: "",
   localMaintenanceRecords: []
 };
@@ -311,6 +311,12 @@ function render() {
     troubleshooting: renderTroubleshooting,
     obd: renderObd
   };
+
+  if (!state.view) {
+    content.innerHTML = "";
+    return;
+  }
+
   renderers[state.view]();
 }
 

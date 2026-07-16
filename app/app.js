@@ -59,7 +59,28 @@ function table(headers, rows) {
       return `<tr>${cells}</tr>`;
     })
     .join("");
-  return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  const cards = rows
+    .map((row) => {
+      const fields = headers
+        .map((header) => {
+          const value = header.value(row);
+          const renderedValue = header.html ? value : escapeHtml(value);
+          return `
+            <div class="data-field">
+              <span>${header.label}</span>
+              <strong>${renderedValue}</strong>
+            </div>
+          `;
+        })
+        .join("");
+      return `<article class="data-card">${fields}</article>`;
+    })
+    .join("");
+
+  return `
+    <div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
+    <div class="mobile-card-list">${cards}</div>
+  `;
 }
 
 function loadLocalMaintenanceRecords() {

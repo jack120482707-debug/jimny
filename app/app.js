@@ -11,7 +11,8 @@ const state = {
   data: {},
   view: null,
   query: "",
-  localMaintenanceRecords: []
+  localMaintenanceRecords: [],
+  selected: {}
 };
 
 const content = document.querySelector("#appContent");
@@ -80,6 +81,57 @@ function table(headers, rows) {
   return `
     <div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
     <div class="mobile-card-list">${cards}</div>
+  `;
+}
+
+function detailsCard(headers, row) {
+  const fields = headers
+    .map((header) => {
+      const value = header.value(row);
+      const renderedValue = header.html ? value : escapeHtml(value);
+      return `
+        <div class="data-field">
+          <span>${header.label}</span>
+          <strong>${renderedValue}</strong>
+        </div>
+      `;
+    })
+    .join("");
+  return `<article class="data-card detail-card">${fields}</article>`;
+}
+
+function selectDetails({ title, selectKey, rows, label, headers, placeholder = "請選擇項目" }) {
+  if (!rows.length) {
+    return `
+      <section class="select-section">
+        <h2>${title}</h2>
+        <div class="empty">沒有符合搜尋條件的資料。</div>
+      </section>
+    `;
+  }
+
+  const selectedId = state.selected[selectKey] || "";
+  const selectedRow = rows.find((row, index) => String(index) === selectedId);
+  const options = rows
+    .map((row, index) => {
+      const value = String(index);
+      const selected = value === selectedId ? " selected" : "";
+      return `<option value="${value}"${selected}>${escapeHtml(label(row))}</option>`;
+    })
+    .join("");
+
+  return `
+    <section class="select-section">
+      <h2>${title}</h2>
+      <label class="select-control">
+        <span>${placeholder}</span>
+        <select data-select-key="${selectKey}">
+          <option value="">${placeholder}</option>
+          ${options}
+        </select>
+      </label>
+      ${selectedRow ? detailsCard(headers, selectedRow) : `<div class="empty">請先從下拉選單選擇一筆資料。</div>`}
+    </section>
   `;
 }
 
@@ -198,81 +250,91 @@ function renderOverview() {
 function renderMaintenance() {
   const intervals = state.data.maintenance.service_intervals || [];
   const records = allMaintenanceRecords();
+  const intervalRows = intervals.filter(matchesQuery);
+  const recordRows = records.filter(matchesQuery);
+  const intervalHeaders = [
+    { label: "項目", value: (row) => row.item },
+    { label: "公里", value: (row) => `${row.interval_km.toLocaleString()} km` },
+    { label: "月份", value: (row) => `${row.interval_months} 個月` },
+    { label: "嚴苛使用", value: (row) => row.severity_adjustment }
+  ];
+  const recordHeaders = [
+    { label: "日期", value: (row) => row.date },
+    { label: "里程", value: (row) => `${row.odometer_km.toLocaleString()} km` },
+    { label: "店家", value: (row) => row.shop },
+    { label: "項目", value: (row) => row.items.map((item) => item.name).join("、") },
+    { label: "備註", value: (row) => row.notes },
+    {
+      label: "動作",
+      html: true,
+      value: (row) =>
+        row.local_id
+          ? `<button class="link-button" data-delete-maintenance="${escapeHtml(row.local_id)}">刪除</button>`
+          : "-"
+    }
+  ];
 
   content.innerHTML = `
     ${maintenanceForm()}
-    <section>
-      <h2>保養週期</h2>
-      ${table(
-        [
-          { label: "項目", value: (row) => row.item },
-          { label: "公里", value: (row) => `${row.interval_km.toLocaleString()} km` },
-          { label: "月份", value: (row) => `${row.interval_months} 個月` },
-          { label: "嚴苛使用", value: (row) => row.severity_adjustment }
-        ],
-        intervals.filter(matchesQuery)
-      )}
-    </section>
-    <section>
-      <h2>保養紀錄</h2>
-      ${table(
-        [
-          { label: "日期", value: (row) => row.date },
-          { label: "里程", value: (row) => `${row.odometer_km.toLocaleString()} km` },
-          { label: "店家", value: (row) => row.shop },
-          { label: "項目", value: (row) => row.items.map((item) => item.name).join("、") },
-          { label: "備註", value: (row) => row.notes },
-          {
-            label: "動作",
-            html: true,
-            value: (row) =>
-              row.local_id
-                ? `<button class="link-button" data-delete-maintenance="${escapeHtml(row.local_id)}">刪除</button>`
-                : "-"
-          }
-        ],
-        records.filter(matchesQuery)
-      )}
-    </section>
+    ${selectDetails({
+      title: "保養週期",
+      selectKey: "maintenanceIntervals",
+      rows: intervalRows,
+      label: (row) => `${row.item} / ${row.interval_km.toLocaleString()} km`,
+      headers: intervalHeaders,
+      placeholder: "選擇保養項目"
+    })}
+    ${selectDetails({
+      title: "保養紀錄",
+      selectKey: "maintenanceRecords",
+      rows: recordRows,
+      label: (row) => `${row.date} / ${row.odometer_km.toLocaleString()} km / ${row.items.map((item) => item.name).join("、")}`,
+      headers: recordHeaders,
+      placeholder: "選擇保養紀錄"
+    })}
   `;
 }
 
 function renderFluids() {
-  const fluids = state.data.fluids.fluids || [];
+  const fluids = (state.data.fluids.fluids || []).filter(matchesQuery);
+  const headers = [
+    { label: "系統", value: (row) => row.system },
+    { label: "油品", value: (row) => row.fluid_name },
+    { label: "規格", value: (row) => row.recommended_spec },
+    { label: "黏度", value: (row) => row.viscosity },
+    { label: "容量", value: (row) => row.capacity_liters },
+    { label: "備註", value: (row) => row.notes }
+  ];
   content.innerHTML = `
-    <section>
-      <h2>油品規格</h2>
-      ${table(
-        [
-          { label: "系統", value: (row) => row.system },
-          { label: "油品", value: (row) => row.fluid_name },
-          { label: "規格", value: (row) => row.recommended_spec },
-          { label: "黏度", value: (row) => row.viscosity },
-          { label: "容量", value: (row) => row.capacity_liters },
-          { label: "備註", value: (row) => row.notes }
-        ],
-        fluids.filter(matchesQuery)
-      )}
-    </section>
+    ${selectDetails({
+      title: "油品規格",
+      selectKey: "fluids",
+      rows: fluids,
+      label: (row) => `${row.system} / ${row.fluid_name}`,
+      headers,
+      placeholder: "選擇油品"
+    })}
   `;
 }
 
 function renderTorque() {
-  const specs = state.data.torque.torque_specs || [];
+  const specs = (state.data.torque.torque_specs || []).filter(matchesQuery);
+  const headers = [
+    { label: "分類", value: (row) => row.category },
+    { label: "零件", value: (row) => row.component },
+    { label: "扭力", value: (row) => `${row.torque_nm} ${state.data.torque.unit}` },
+    { label: "尺寸", value: (row) => row.fastener_size },
+    { label: "備註", value: (row) => row.notes }
+  ];
   content.innerHTML = `
-    <section>
-      <h2>鎖付扭力</h2>
-      ${table(
-        [
-          { label: "分類", value: (row) => row.category },
-          { label: "零件", value: (row) => row.component },
-          { label: "扭力", value: (row) => `${row.torque_nm} ${state.data.torque.unit}` },
-          { label: "尺寸", value: (row) => row.fastener_size },
-          { label: "備註", value: (row) => row.notes }
-        ],
-        specs.filter(matchesQuery)
-      )}
-    </section>
+    ${selectDetails({
+      title: "鎖付扭力",
+      selectKey: "torque",
+      rows: specs,
+      label: (row) => `${row.category} / ${row.component}`,
+      headers,
+      placeholder: "選擇零件"
+    })}
   `;
 }
 
@@ -304,22 +366,26 @@ function renderTroubleshooting() {
 }
 
 function renderObd() {
-  const codes = state.data.obd.codes || [];
+  const codes = (state.data.obd.codes || []).filter(matchesQuery);
+  const headers = [
+    { label: "代碼", value: (row) => row.code },
+    { label: "系統", value: (row) => row.system },
+    { label: "說明", value: (row) => row.description },
+    { label: "嚴重度", value: (row) => row.severity },
+    { label: "症狀", value: (row) => row.symptoms },
+    { label: "可能原因", value: (row) => row.possible_causes },
+    { label: "診斷", value: (row) => row.diagnosis },
+    { label: "建議修復", value: (row) => row.fixes }
+  ];
   content.innerHTML = `
-    <section>
-      <h2>OBD 代碼</h2>
-      ${table(
-        [
-          { label: "代碼", value: (row) => row.code },
-          { label: "系統", value: (row) => row.system },
-          { label: "說明", value: (row) => row.description },
-          { label: "嚴重度", value: (row) => row.severity },
-          { label: "可能原因", value: (row) => row.possible_causes },
-          { label: "建議修復", value: (row) => row.fixes }
-        ],
-        codes.filter(matchesQuery)
-      )}
-    </section>
+    ${selectDetails({
+      title: "OBD 代碼",
+      selectKey: "obd",
+      rows: codes,
+      label: (row) => `${row.code} / ${row.description}`,
+      headers,
+      placeholder: "選擇 OBD 代碼"
+    })}
   `;
 }
 
@@ -370,6 +436,14 @@ navButtons.forEach((button) => {
 
 searchInput.addEventListener("input", (event) => {
   state.query = event.target.value.trim();
+  state.selected = {};
+  render();
+});
+
+content.addEventListener("change", (event) => {
+  const selectKey = event.target.dataset.selectKey;
+  if (!selectKey) return;
+  state.selected[selectKey] = event.target.value;
   render();
 });
 

@@ -211,6 +211,34 @@ h3 {
   font-size: 13px;
 }
 
+.select-section {
+  display: grid;
+  gap: 12px;
+}
+
+.select-control {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.select-control select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--panel);
+  font: inherit;
+}
+
+.detail-card {
+  max-width: 760px;
+}
+
 .view {
   display: grid;
   gap: 16px;
@@ -415,5 +443,9 @@ tr:last-child td {
   .card,
   .data-card {
     box-shadow: none;
+  }
+
+  .detail-card {
+    max-width: none;
   }
 }

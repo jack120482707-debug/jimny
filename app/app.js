@@ -4,7 +4,8 @@ const dataFiles = {
   fluids: "../data/fluids.json",
   torque: "../data/torque.json",
   troubleshooting: "../data/troubleshooting.json",
-  obd: "../data/obd_codes.json"
+  obd: "../data/obd_codes.json",
+  manual: "../data/manual_index.json"
 };
 
 const state = {
@@ -40,6 +41,28 @@ function escapeHtml(value) {
 function matchesQuery(item) {
   if (!state.query) return true;
   return JSON.stringify(item).toLowerCase().includes(state.query.toLowerCase());
+}
+
+function expandedQueryTerms(query) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
+  const aliases = state.data.manual?.aliases || {};
+  const terms = [normalizedQuery];
+
+  Object.entries(aliases).forEach(([zh, englishTerms]) => {
+    if (zh.toLowerCase().includes(normalizedQuery) || normalizedQuery.includes(zh.toLowerCase())) {
+      terms.push(...englishTerms.map((term) => term.toLowerCase()));
+    }
+  });
+
+  return [...new Set(terms)];
+}
+
+function matchesManualPage(page) {
+  const terms = expandedQueryTerms(state.query);
+  if (!terms.length) return true;
+  const haystack = `${page.title} ${page.text} ${(page.zh_keywords || []).join(" ")}`.toLowerCase();
+  return terms.some((term) => haystack.includes(term));
 }
 
 function card(title, body) {
@@ -389,6 +412,36 @@ function renderObd() {
   `;
 }
 
+function renderManual() {
+  const pages = (state.data.manual.pages || []).filter(matchesManualPage).slice(0, 80);
+  const headers = [
+    { label: "頁碼", value: (row) => `第 ${row.page} 頁` },
+    { label: "標題", value: (row) => row.title },
+    { label: "中文關鍵字", value: (row) => row.zh_keywords },
+    { label: "內容摘要", value: (row) => `${row.text.slice(0, 900)}${row.text.length > 900 ? "..." : ""}` },
+    {
+      label: "PDF",
+      html: true,
+      value: (row) => `<a href="../docs/manual.pdf#page=${row.page}" target="_blank" rel="noopener">開啟第 ${row.page} 頁</a>`
+    }
+  ];
+
+  content.innerHTML = `
+    <section class="select-section">
+      <h2>維修手冊</h2>
+      <div class="empty">可用中文或英文搜尋，例如：煞車、機油、扭力、保險絲、冷卻、battery、brake、P0300。</div>
+    </section>
+    ${selectDetails({
+      title: "搜尋結果",
+      selectKey: "manual",
+      rows: pages,
+      label: (row) => `第 ${row.page} 頁 / ${row.title}`,
+      headers,
+      placeholder: pages.length ? "選擇手冊頁面" : "沒有搜尋結果"
+    })}
+  `;
+}
+
 function render() {
   const renderers = {
     overview: renderOverview,
@@ -396,7 +449,8 @@ function render() {
     fluids: renderFluids,
     torque: renderTorque,
     troubleshooting: renderTroubleshooting,
-    obd: renderObd
+    obd: renderObd,
+    manual: renderManual
   };
 
   if (!state.view) {

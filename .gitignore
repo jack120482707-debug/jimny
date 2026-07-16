@@ -17,6 +17,9 @@ temp/
 exports/
 *.bak
 
+# Local reference manuals
+docs/manual.pdf
+
 # Dependencies and build output for future app work
 node_modules/
 dist/

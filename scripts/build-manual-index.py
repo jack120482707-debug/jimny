@@ -7,6 +7,7 @@ import pdfplumber
 
 PDF_PATH = Path("docs/manual.pdf")
 OUT_PATH = Path("data/manual_index.json")
+OFFICIAL_PDF_URL = "https://www.suzukimanuals.com.au/assets/Owners-Manuals/Jimny-5dr-99011M80T01-01E-v2.pdf"
 
 ALIASES = {
     "保養": ["maintenance", "service", "inspection", "replace", "schedule"],
@@ -93,6 +94,7 @@ def main():
             {
                 "schema_version": "1.0.0",
                 "source_pdf": "docs/manual.pdf",
+                "official_pdf_url": OFFICIAL_PDF_URL,
                 "page_count": len(pages),
                 "aliases": ALIASES,
                 "pages": pages,

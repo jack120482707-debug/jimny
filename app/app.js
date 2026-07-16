@@ -414,22 +414,23 @@ function renderObd() {
 
 function renderManual() {
   const pages = (state.data.manual.pages || []).filter(matchesManualPage).slice(0, 80);
+  const officialPdfUrl = state.data.manual.official_pdf_url || "https://www.suzukimanuals.com.au/assets/Owners-Manuals/Jimny-5dr-99011M80T01-01E-v2.pdf";
   const headers = [
     { label: "頁碼", value: (row) => `第 ${row.page} 頁` },
     { label: "標題", value: (row) => row.title },
     { label: "中文關鍵字", value: (row) => row.zh_keywords },
-    { label: "內容摘要", value: (row) => `${row.text.slice(0, 900)}${row.text.length > 900 ? "..." : ""}` },
+    { label: "手冊文字內容", value: (row) => row.text },
     {
-      label: "PDF",
+      label: "原廠 PDF",
       html: true,
-      value: (row) => `<a href="../docs/manual.pdf#page=${row.page}" target="_blank" rel="noopener">開啟第 ${row.page} 頁</a>`
+      value: (row) => `<a href="${officialPdfUrl}#page=${row.page}" target="_blank" rel="noopener">開啟 Suzuki 原廠 PDF</a>`
     }
   ];
 
   content.innerHTML = `
     <section class="select-section">
       <h2>維修手冊</h2>
-      <div class="empty">可用中文或英文搜尋，例如：煞車、機油、扭力、保險絲、冷卻、battery、brake、P0300。</div>
+      <div class="empty">可用中文或英文搜尋，例如：煞車、機油、扭力、保險絲、冷卻、battery、brake、P0300。搜尋使用本機索引，完整 PDF 會開啟 Suzuki 原廠公開連結。</div>
     </section>
     ${selectDetails({
       title: "搜尋結果",

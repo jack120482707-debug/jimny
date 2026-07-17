@@ -24,6 +24,56 @@ const statusLabel = document.querySelector("#dataStatus");
 const searchInput = document.querySelector("#searchInput");
 const navButtons = [...document.querySelectorAll(".nav-button")];
 const maintenanceStorageKey = "jimny-db-maintenance-records";
+const aiIntents = [
+  {
+    id: "starting",
+    label: "啟動 / 發不動",
+    triggers: ["啟動", "發不動", "冷車", "沒電", "starter", "start"],
+    terms: ["battery", "jump-start", "starter", "engine switch", "starting", "ignition"]
+  },
+  {
+    id: "overheat",
+    label: "水溫 / 過熱",
+    triggers: ["水溫", "過熱", "冷卻", "水箱", "coolant", "overheat"],
+    terms: ["coolant", "radiator", "overheat", "temperature gauge", "cooling system", "engine overheating"]
+  },
+  {
+    id: "brake",
+    label: "煞車",
+    triggers: ["煞車", "剎車", "brake", "異音", "踏板"],
+    terms: ["brake", "brake fluid", "brake pedal", "parking brake", "braking"]
+  },
+  {
+    id: "fuse",
+    label: "保險絲 / 電系",
+    triggers: ["保險絲", "電系", "沒電", "燈不亮", "fuse"],
+    terms: ["fuse", "fuses", "fuse box", "electrical", "battery"]
+  },
+  {
+    id: "fluid",
+    label: "油品 / 液體",
+    triggers: ["油", "油品", "機油", "變速箱油", "差速器", "fluid", "oil"],
+    terms: ["engine oil", "oil filter", "gear oil", "fluid", "differential oil", "transmission oil"]
+  },
+  {
+    id: "torque",
+    label: "扭力 / 鎖付",
+    triggers: ["扭力", "鎖", "螺絲", "torque", "tightening"],
+    terms: ["torque", "tightening", "nut", "bolt"]
+  },
+  {
+    id: "obd",
+    label: "診斷 / 警示燈",
+    triggers: ["OBD", "故障碼", "警示燈", "故障燈", "check engine", "diagnostic"],
+    terms: ["diagnostic", "warning light", "malfunction indicator", "DTC", "check engine"]
+  },
+  {
+    id: "tire",
+    label: "輪胎 / 胎壓",
+    triggers: ["輪胎", "胎壓", "抖動", "tire", "tyre"],
+    terms: ["tire", "tyre", "tire pressure", "wheel", "vibration"]
+  }
+];
 
 function text(value) {
   if (value === null || value === undefined || value === "") return "-";
@@ -61,6 +111,20 @@ function expandedQueryTerms(query) {
   return [...new Set(terms)];
 }
 
+function detectAiIntents(question) {
+  const normalizedQuestion = question.toLowerCase();
+  return aiIntents.filter((intent) =>
+    intent.triggers.some((trigger) => normalizedQuestion.includes(trigger.toLowerCase()))
+  );
+}
+
+function aiSearchTerms(question) {
+  const detected = detectAiIntents(question);
+  const terms = expandedQueryTerms(question);
+  detected.forEach((intent) => terms.push(...intent.terms.map((term) => term.toLowerCase())));
+  return [...new Set(terms)].filter((term) => term.length >= 2);
+}
+
 function matchesManualPage(page) {
   const terms = expandedQueryTerms(state.query);
   if (!terms.length) return true;
@@ -69,7 +133,7 @@ function matchesManualPage(page) {
 }
 
 function scoreManualPage(page, question) {
-  const terms = expandedQueryTerms(question);
+  const terms = aiSearchTerms(question);
   if (!terms.length) return 0;
   const title = String(page.title || "").toLowerCase();
   const textBody = String(page.text || "").toLowerCase();
@@ -77,30 +141,53 @@ function scoreManualPage(page, question) {
 
   return terms.reduce((score, term) => {
     let nextScore = score;
-    if (title.includes(term)) nextScore += 8;
-    if (keywords.includes(term)) nextScore += 5;
+    if (title.includes(term)) nextScore += 12;
+    if (keywords.includes(term)) nextScore += 8;
     if (textBody.includes(term)) nextScore += 2;
+    if (textBody.includes(`warning ${term}`) || textBody.includes(`${term} warning`)) nextScore += 3;
+    if (textBody.includes(`notice ${term}`) || textBody.includes(`${term} notice`)) nextScore += 2;
     return nextScore;
   }, 0);
 }
 
-function findManualSources(question, limit = 5) {
+function extractRelevantSnippet(textBody, terms, maxLength = 620) {
+  const textValue = String(textBody || "");
+  const lowerText = textValue.toLowerCase();
+  const hitPositions = terms
+    .map((term) => lowerText.indexOf(term.toLowerCase()))
+    .filter((position) => position >= 0)
+    .sort((a, b) => a - b);
+
+  if (!hitPositions.length) return textValue.slice(0, maxLength);
+
+  const center = hitPositions[0];
+  const start = Math.max(0, center - Math.floor(maxLength * 0.35));
+  const end = Math.min(textValue.length, start + maxLength);
+  const prefix = start > 0 ? "..." : "";
+  const suffix = end < textValue.length ? "..." : "";
+  return `${prefix}${textValue.slice(start, end)}${suffix}`;
+}
+
+function findManualSources(question, limit = 4) {
+  const terms = aiSearchTerms(question);
   return (state.data.manual.pages || [])
     .map((page) => ({ ...page, score: scoreManualPage(page, question) }))
     .filter((page) => page.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    .slice(0, limit)
+    .map((page) => ({ ...page, snippet: extractRelevantSnippet(page.text, terms) }));
 }
 
 function buildAiPrompt(question, sources) {
   const vehicle = state.data.vehicle.vehicle;
+  const detectedIntents = detectAiIntents(question);
   const recentRecords = allMaintenanceRecords()
-    .slice(0, 5)
+    .slice(0, 3)
     .map((record) => `- ${record.date}, ${record.odometer_km} km, ${record.items.map((item) => item.name).join("、")}, ${record.notes || "無備註"}`)
     .join("\n");
   const sourceText = sources
     .map(
-      (page) => `【手冊第 ${page.page} 頁：${page.title}】\n${page.text.slice(0, 1400)}`
+      (page) => `【手冊第 ${page.page} 頁：${page.title}】\n${page.snippet || page.text.slice(0, 620)}`
     )
     .join("\n\n");
 
@@ -116,20 +203,30 @@ function buildAiPrompt(question, sources) {
 使用者問題：
 ${question}
 
+系統判斷的問題類型：
+${detectedIntents.length ? detectedIntents.map((intent) => `- ${intent.label}`).join("\n") : "- 未明確分類，請先詢問補充症狀"}
+
 最近保養紀錄：
 ${recentRecords || "- 無"}
 
-請優先依據以下車主手冊內容回答，不足處請明確說「手冊摘錄不足，需進一步檢查」：
+以下是系統從車主手冊擷取的相關片段。請只把它們當作主要依據，不要把無關段落硬套到答案：
 ${sourceText || "未找到相關手冊摘錄。"}
 
+回答規則：
+- 先直接回答使用者最可能需要做的第一步。
+- 不要逐字翻譯手冊；請整理成診斷流程。
+- 如果手冊片段不足以支持結論，請明確說「手冊摘錄不足」。
+- 不要編造手冊沒有提到的規格值。
+- 涉及煞車、轉向、過熱、燃油、電系短路時，優先提醒安全停車與找技師。
+
 請用以下格式回答：
-1. 結論
-2. 可能原因
-3. 建議檢查順序
+1. 最短結論
+2. 先做哪 3 個檢查
+3. 可能原因排序
 4. 可自行確認項目
 5. 需要技師處理項目
 6. 相關手冊頁碼
-7. 安全注意事項`;
+7. 不足資訊 / 需要補問的問題`;
 }
 
 function renderAiSources(sources) {
@@ -144,7 +241,7 @@ function renderAiSources(sources) {
               <div class="data-field"><span>頁碼</span><strong>第 ${page.page} 頁</strong></div>
               <div class="data-field"><span>標題</span><strong>${escapeHtml(page.title)}</strong></div>
               <div class="data-field"><span>關鍵字</span><strong>${escapeHtml(page.zh_keywords || [])}</strong></div>
-              <div class="data-field"><span>摘要</span><strong>${escapeHtml(page.text.slice(0, 420))}${page.text.length > 420 ? "..." : ""}</strong></div>
+              <div class="data-field"><span>命中片段</span><strong>${escapeHtml(page.snippet || page.text.slice(0, 420))}</strong></div>
               <div class="data-field"><span>原廠 PDF</span><strong><a href="${officialPdfUrl}#page=${page.page}" target="_blank" rel="noopener">開啟 Suzuki 原廠 PDF</a></strong></div>
             </article>
           `
@@ -547,11 +644,11 @@ function renderAi() {
           <button type="submit">產生 AI Prompt</button>
           <button type="button" class="secondary" id="copyAiPrompt"${state.aiPrompt ? "" : " disabled"}>複製 Prompt</button>
         </div>
-        <p class="form-note">這個版本不會直接呼叫 AI API，會先依維修手冊索引整理可貼到 Gemini 或 ChatGPT 的 Prompt。</p>
+        <p class="form-note">這個版本不會直接呼叫 AI API，會先判斷問題類型，再從維修手冊抓相關片段，整理成可貼到 Gemini 或 ChatGPT 的 Prompt。</p>
       </form>
     </section>
     <section>
-      <h2>相關手冊內容</h2>
+      <h2>相關手冊片段</h2>
       ${renderAiSources(state.aiSources)}
     </section>
     <section>

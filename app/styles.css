@@ -309,6 +309,11 @@ tr:last-child td {
   display: none;
 }
 
+.mobile-card-list.always-show {
+  display: grid;
+  gap: 12px;
+}
+
 .data-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -345,6 +350,18 @@ tr:last-child td {
   font-weight: 600;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.prompt-output {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--ink);
+  background: var(--panel);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
 }
 
 .pill-row {

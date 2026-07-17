@@ -12,6 +12,9 @@ const state = {
   data: {},
   view: null,
   query: "",
+  aiQuestion: "",
+  aiPrompt: "",
+  aiSources: [],
   localMaintenanceRecords: [],
   selected: {}
 };
@@ -63,6 +66,92 @@ function matchesManualPage(page) {
   if (!terms.length) return true;
   const haystack = `${page.title} ${page.text} ${(page.zh_keywords || []).join(" ")}`.toLowerCase();
   return terms.some((term) => haystack.includes(term));
+}
+
+function scoreManualPage(page, question) {
+  const terms = expandedQueryTerms(question);
+  if (!terms.length) return 0;
+  const title = String(page.title || "").toLowerCase();
+  const textBody = String(page.text || "").toLowerCase();
+  const keywords = (page.zh_keywords || []).join(" ").toLowerCase();
+
+  return terms.reduce((score, term) => {
+    let nextScore = score;
+    if (title.includes(term)) nextScore += 8;
+    if (keywords.includes(term)) nextScore += 5;
+    if (textBody.includes(term)) nextScore += 2;
+    return nextScore;
+  }, 0);
+}
+
+function findManualSources(question, limit = 5) {
+  return (state.data.manual.pages || [])
+    .map((page) => ({ ...page, score: scoreManualPage(page, question) }))
+    .filter((page) => page.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+function buildAiPrompt(question, sources) {
+  const vehicle = state.data.vehicle.vehicle;
+  const recentRecords = allMaintenanceRecords()
+    .slice(0, 5)
+    .map((record) => `- ${record.date}, ${record.odometer_km} km, ${record.items.map((item) => item.name).join("、")}, ${record.notes || "無備註"}`)
+    .join("\n");
+  const sourceText = sources
+    .map(
+      (page) => `【手冊第 ${page.page} 頁：${page.title}】\n${page.text.slice(0, 1400)}`
+    )
+    .join("\n\n");
+
+  return `你是 Suzuki Jimny 維修與保養助理。請使用繁體中文回答。
+
+車輛設定：
+- 車型：${vehicle.make} ${vehicle.model} ${vehicle.generation}
+- 車身：Jimny 5門
+- 變速箱：手排
+- 引擎：${vehicle.engine.code}，${vehicle.engine.displacement_cc} cc
+- 驅動：${vehicle.drive_type}
+
+使用者問題：
+${question}
+
+最近保養紀錄：
+${recentRecords || "- 無"}
+
+請優先依據以下車主手冊內容回答，不足處請明確說「手冊摘錄不足，需進一步檢查」：
+${sourceText || "未找到相關手冊摘錄。"}
+
+請用以下格式回答：
+1. 結論
+2. 可能原因
+3. 建議檢查順序
+4. 可自行確認項目
+5. 需要技師處理項目
+6. 相關手冊頁碼
+7. 安全注意事項`;
+}
+
+function renderAiSources(sources) {
+  if (!sources.length) return `<div class="empty">尚未找到相關手冊頁面。可換個關鍵字，例如：煞車、冷卻、電瓶、保險絲、brake、battery。</div>`;
+  const officialPdfUrl = state.data.manual.official_pdf_url;
+  return `
+    <div class="mobile-card-list always-show">
+      ${sources
+        .map(
+          (page) => `
+            <article class="data-card">
+              <div class="data-field"><span>頁碼</span><strong>第 ${page.page} 頁</strong></div>
+              <div class="data-field"><span>標題</span><strong>${escapeHtml(page.title)}</strong></div>
+              <div class="data-field"><span>關鍵字</span><strong>${escapeHtml(page.zh_keywords || [])}</strong></div>
+              <div class="data-field"><span>摘要</span><strong>${escapeHtml(page.text.slice(0, 420))}${page.text.length > 420 ? "..." : ""}</strong></div>
+              <div class="data-field"><span>原廠 PDF</span><strong><a href="${officialPdfUrl}#page=${page.page}" target="_blank" rel="noopener">開啟 Suzuki 原廠 PDF</a></strong></div>
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+  `;
 }
 
 function card(title, body) {
@@ -443,6 +532,39 @@ function renderManual() {
   `;
 }
 
+function renderAi() {
+  content.innerHTML = `
+    <section>
+      <h2>AI 問答準備</h2>
+      <form class="record-form" id="aiQuestionForm">
+        <div class="form-grid">
+          <label class="wide">
+            <span>你的問題</span>
+            <textarea name="question" rows="4" placeholder="例如：冷車啟動無力要先檢查什麼？">${escapeHtml(state.aiQuestion)}</textarea>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit">產生 AI Prompt</button>
+          <button type="button" class="secondary" id="copyAiPrompt"${state.aiPrompt ? "" : " disabled"}>複製 Prompt</button>
+        </div>
+        <p class="form-note">這個版本不會直接呼叫 AI API，會先依維修手冊索引整理可貼到 Gemini 或 ChatGPT 的 Prompt。</p>
+      </form>
+    </section>
+    <section>
+      <h2>相關手冊內容</h2>
+      ${renderAiSources(state.aiSources)}
+    </section>
+    <section>
+      <h2>可複製 Prompt</h2>
+      ${
+        state.aiPrompt
+          ? `<textarea class="prompt-output" readonly rows="18">${escapeHtml(state.aiPrompt)}</textarea>`
+          : `<div class="empty">輸入問題後，這裡會產生完整 Prompt。</div>`
+      }
+    </section>
+  `;
+}
+
 function render() {
   const renderers = {
     overview: renderOverview,
@@ -451,7 +573,8 @@ function render() {
     torque: renderTorque,
     troubleshooting: renderTroubleshooting,
     obd: renderObd,
-    manual: renderManual
+    manual: renderManual,
+    ai: renderAi
   };
 
   if (!state.view) {
@@ -503,6 +626,16 @@ content.addEventListener("change", (event) => {
 });
 
 content.addEventListener("submit", (event) => {
+  if (event.target.id === "aiQuestionForm") {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    state.aiQuestion = String(formData.get("question") || "").trim();
+    state.aiSources = findManualSources(state.aiQuestion);
+    state.aiPrompt = buildAiPrompt(state.aiQuestion, state.aiSources);
+    render();
+    return;
+  }
+
   if (event.target.id !== "maintenanceForm") return;
   event.preventDefault();
 
@@ -551,6 +684,11 @@ content.addEventListener("click", (event) => {
     link.download = "jimny-maintenance-phone-records.json";
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  if (event.target.id === "copyAiPrompt" && state.aiPrompt) {
+    navigator.clipboard.writeText(state.aiPrompt);
+    event.target.textContent = "已複製";
   }
 });
 
